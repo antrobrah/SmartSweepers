@@ -34,22 +34,26 @@ private:
 	double			m_dRotation;
 
 	double			m_dSpeed;
-	
+
 	//the number of Mines gathered by the sweeper 
 	double			m_dMinesGathered;
 
 	//the scale of the sweeper when drawn
 	double			m_dScale;
 
-  //index position of closest mine
-  int         m_iClosestMine;
-  
+	//index position of closest mine
+	int				m_iClosestMine;
+
+	// boolean value of whether active
+	//(inactive only when collide with supermine)
+	bool			m_active;
+
 
 public:
 
 
 	CMinesweeper();
-	
+
 	//updates the information from the sweepers enviroment
 	bool			Update(vector<CCollisionObject> &objects);
 
@@ -63,7 +67,7 @@ public:
 	int       CheckForMine(vector<CCollisionObject> &objects, double size);
 
 	void			Reset();
-  
+
 
 	//-------------------accessor functions
 	SVector2D	Position()const{return m_vPosition;}
@@ -71,11 +75,16 @@ public:
 	void			IncrementMinesGathered(){++m_dMinesGathered;}
 
 	double		MinesGathered()const{return m_dMinesGathered;}
-  
+
+	bool			getActive(){return m_active;};
+
+
+	//-------------------mutator functions
+	void			setActive(bool act) {m_active = act;};
+
 };
 
 
 #endif
 
-	
-	
+

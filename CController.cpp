@@ -39,6 +39,7 @@ const SPoint mine[NumMineVerts] = {SPoint(-1, -1),
 //
 //-----------------------------------------------------------------------
 CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
+										 m_NumActiveSweepers(CParams::iNumSweepers),
 										                     m_bFastRender(false),
 										                     m_iTicks(0),
 										                     m_NumMines(CParams::iNumMines),
@@ -57,6 +58,7 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
 	
 	m_vecAvMinesGathered.push_back(0);
 	m_vecMostMinesGathered.push_back(0);
+	m_vecSweepersRemaining.push_back(0);
 
 	//TODO: initialse the learning algorithm here
 	// _       _ _   _       _ _           _                   
@@ -170,30 +172,28 @@ bool CController::Update()
 
 			if (GrabHit >= 0)
 			{
-				// collided with mine
-				if(m_vecObjects[GrabHit].getType()==CCollisionObject::Mine)
+				// --- collided with mine --- 
+				if(m_vecObjects[GrabHit].getType()==CCollisionObject::Mine && m_vecObjects[GrabHit].getActive())
 				{
 					//we have discovered a mine so increase MinesGathered
 					m_vecSweepers[i].IncrementMinesGathered();
 
 					//mine found so replace the mine with another at a random position
-					m_vecObjects[GrabHit] = CCollisionObject();
+					m_vecObjects[GrabHit].setActive(false);
 				}
 
-				// collided with supermine
-				if(m_vecObjects[GrabHit].getType()==CCollisionObject::SuperMine)
+				// --- collided with supermine --- 
+				if(m_vecObjects[GrabHit].getType()==CCollisionObject::SuperMine && m_vecObjects[GrabHit].getActive())
 				{
-					if(m_NumSweepers > 0)
-					{
-						// destroy minesweeper
-						m_vecSweepers.erase(m_vecSweepers.begin()+i);
+					// set inactive for this iteration
+					m_vecSweepers[i].setActive(false);
 
-						// decrease number of sweepers
-						--m_NumSweepers;
+					// decrease number of sweepers
+					--m_NumActiveSweepers;
 
-						// erase supermine
-						//m_vecObjects.erase(m_vecObjects.begin()+GrabHit);
-					}
+					// hide supermine for rest of iteration
+					m_vecObjects[GrabHit].setActive(false);
+
 
 				}
 			}
@@ -205,6 +205,8 @@ bool CController::Update()
 		//update the stats to be used in our stat window
 		//TODO: at the moment this is set to 0 for all sweepers by default.
 		//		You should apply meaningful stats from your sweepers here.
+		
+		// Find data to add to stats vectors
 		double tot_mines_collected = 0.0;
 		double max_mines = 0.0;
 		for(int i=0; i<m_NumSweepers ; ++i)
@@ -213,10 +215,12 @@ bool CController::Update()
 			if(m_vecSweepers[i].MinesGathered() > max_mines)
 					max_mines = m_vecSweepers[i].MinesGathered();
 		}
-
 		double average = tot_mines_collected/m_NumSweepers;
+
+		// add data for this iteration to stats vectors
 		m_vecAvMinesGathered.push_back(average);
 		m_vecMostMinesGathered.push_back(max_mines);
+		m_vecSweepersRemaining.push_back(m_NumActiveSweepers);
 
 		//increment the iteration counter
 		++m_iIterations;
@@ -224,16 +228,19 @@ bool CController::Update()
 		//reset cycles
 		m_iTicks = 0;
 	
-		//reset the sweepers positions etc
+		//reset the sweepers positions etc (and sets activity to true)
 		for (int i=0; i<m_NumSweepers; ++i)
 		{
 			m_vecSweepers[i].Reset();
 		}
 
-		// reset all mines in random locations
-		for (int i=0; i<m_vecObjects.size(); ++i)
+		//reset number of active sweepers
+		m_NumActiveSweepers = m_NumSweepers;
+
+		// reset all mines (and supermines) in random locations (and sets activity to true)
+		for (int i=0; i< m_vecObjects.size(); ++i)
 		{
-			m_vecObjects[i] = CCollisionObject(m_vecObjects[i].getType(),SVector2D(RandFloat() * cxClient,RandFloat() * cyClient));
+			m_vecObjects[i] = CCollisionObject(m_vecObjects[i].getType(),SVector2D(RandFloat() * cxClient,RandFloat() * cyClient));		
 		}
 	}
 	return true;
@@ -273,15 +280,18 @@ void CController::Render(HDC surface)
 
 			WorldTransform(mineVB, m_vecObjects[i].getPosition());
 
-			//draw the mines
-			MoveToEx(surface, (int)mineVB[0].x, (int)mineVB[0].y, NULL);
-
-			for (int vert=1; vert<mineVB.size(); ++vert)
+			//draw the mines (only if active)
+			if(m_vecObjects[i].getActive())
 			{
-				LineTo(surface, (int)mineVB[vert].x, (int)mineVB[vert].y);
-			}
+				MoveToEx(surface, (int)mineVB[0].x, (int)mineVB[0].y, NULL);
 
-			LineTo(surface, (int)mineVB[0].x, (int)mineVB[0].y);
+				for (int vert=1; vert<mineVB.size(); ++vert)
+				{
+					LineTo(surface, (int)mineVB[vert].x, (int)mineVB[vert].y);
+				}
+
+				LineTo(surface, (int)mineVB[0].x, (int)mineVB[0].y);
+			}
 			
 		}
        		
@@ -301,35 +311,38 @@ void CController::Render(HDC surface)
 
 			//transform the vertex buffer
 			m_vecSweepers[i].WorldTransform(sweeperVB);
-
-			//draw the sweeper left track
-			MoveToEx(surface, (int)sweeperVB[0].x, (int)sweeperVB[0].y, NULL);
-
-			for (int vert=1; vert<4; ++vert)
+			
+			if(m_vecSweepers[i].getActive())
 			{
-				LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
-			}
+				//draw the sweeper left track
+				MoveToEx(surface, (int)sweeperVB[0].x, (int)sweeperVB[0].y, NULL);
 
-			LineTo(surface, (int)sweeperVB[0].x, (int)sweeperVB[0].y);
+				for (int vert=1; vert<4; ++vert)
+				{
+					LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
+				}
 
-			//draw the sweeper right track
-			MoveToEx(surface, (int)sweeperVB[4].x, (int)sweeperVB[4].y, NULL);
+				LineTo(surface, (int)sweeperVB[0].x, (int)sweeperVB[0].y);
 
-			for (int vert=5; vert<8; ++vert)
-			{
-				LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
-			}
+				//draw the sweeper right track	
+				MoveToEx(surface, (int)sweeperVB[4].x, (int)sweeperVB[4].y, NULL);
 
-			LineTo(surface, (int)sweeperVB[4].x, (int)sweeperVB[4].y);
+				for (int vert=5; vert<8; ++vert)
+				{
+					LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
+				}
 
-			MoveToEx(surface, (int)sweeperVB[8].x, (int)sweeperVB[8].y, NULL);
-			LineTo(surface, (int)sweeperVB[9].x, (int)sweeperVB[9].y);
+				LineTo(surface, (int)sweeperVB[4].x, (int)sweeperVB[4].y);
 
-			MoveToEx(surface, (int)sweeperVB[10].x, (int)sweeperVB[10].y, NULL);
+				MoveToEx(surface, (int)sweeperVB[8].x, (int)sweeperVB[8].y, NULL);
+				LineTo(surface, (int)sweeperVB[9].x, (int)sweeperVB[9].y);
 
-			for (int vert=11; vert<16; ++vert)
-			{
-				LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
+				MoveToEx(surface, (int)sweeperVB[10].x, (int)sweeperVB[10].y, NULL);
+
+				for (int vert=11; vert<16; ++vert)
+				{
+					LineTo(surface, (int)sweeperVB[vert].x, (int)sweeperVB[vert].y);
+				}
 			}
 
 		}
@@ -360,7 +373,7 @@ void CController::PlotStats(HDC surface)
      s = "Average MinesGathered: " + ftos(m_vecAvMinesGathered.back());
 	TextOut(surface, 5, 40, s.c_str(), s.size());
 
-	s = "Number of sweepers remaining: " + ftos(m_NumSweepers);
+	s = "Number of sweepers remaining: " + ftos(m_vecSweepersRemaining.back());
 	TextOut(surface, 5, 60, s.c_str(), s.size());
     
     //render the graph
@@ -391,6 +404,20 @@ void CController::PlotStats(HDC surface)
     for (int i=0; i<m_vecAvMinesGathered.size(); ++i)
     {
        LineTo(surface, (int)x, (int)(cyClient - VSlice*m_vecAvMinesGathered[i]));
+
+       x += HSlice;
+    }
+
+	//plot the graph for the sweepers remaining
+    x = 0;
+
+    SelectObject(surface, m_GreenPen);
+
+    MoveToEx(surface, 0, cyClient, NULL);
+    
+    for (int i=0; i<m_vecSweepersRemaining.size(); ++i)
+    {
+       LineTo(surface, (int)x, (int)(cyClient - VSlice*m_vecSweepersRemaining[i]));
 
        x += HSlice;
     }

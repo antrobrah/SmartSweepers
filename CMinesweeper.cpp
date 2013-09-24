@@ -7,7 +7,8 @@ CMinesweeper::CMinesweeper():
                              m_dRotation(RandFloat()*CParams::dTwoPi),
                              m_dMinesGathered(0),
 							 m_dScale(CParams::iSweeperScale),
-                             m_iClosestMine(0)
+                             m_iClosestMine(0),
+							 m_active(true)
 {
 	//create a random start position
 	m_vPosition = SVector2D((RandFloat() * CParams::WindowWidth), 
@@ -17,7 +18,7 @@ CMinesweeper::CMinesweeper():
 
 //-------------------------------------------Reset()--------------------
 //
-//	Resets the sweepers position, MinesGathered and rotation
+//	Resets the sweepers position, MinesGathered, rotation and activity
 //
 //----------------------------------------------------------------------
 void CMinesweeper::Reset()
@@ -32,8 +33,12 @@ void CMinesweeper::Reset()
 	//and the rotation
 	m_dRotation = RandFloat()*CParams::dTwoPi;
 
+	//reset activity
+	m_active = true;
+
 	return;
 }
+
 //---------------------WorldTransform--------------------------------
 //
 //	sets up a translation matrix for the sweeper according to its
@@ -71,47 +76,50 @@ void CMinesweeper::WorldTransform(vector<SPoint> &sweeper)
 //-----------------------------------------------------------------------
 bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 {
-	//TODO: update the sweeepers here
-	/*
-					 _       _         _                   
-					| |     | |       | |                  
-	 _   _ _ __   __| | __ _| |_ ___  | |__   ___ _ __ ___ 
-	| | | | '_ \ / _` |/ _` | __/ _ \ | '_ \ / _ \ '__/ _ \
-	| |_| | |_) | (_| | (_| | ||  __/ | | | |  __/ | |  __/
-	 \__,_| .__/ \__,_|\__,_|\__\___| |_| |_|\___|_|  \___|
-		  | |                                              
-		  |_|   
-	*/ 
+	if(m_active)
+	{
+		//TODO: update the sweeepers here
+		/*
+		_       _         _                   
+		| |     | |       | |                  
+		_   _ _ __   __| | __ _| |_ ___  | |__   ___ _ __ ___ 
+		| | | | '_ \ / _` |/ _` | __/ _ \ | '_ \ / _ \ '__/ _ \
+		| |_| | |_) | (_| | (_| | ||  __/ | | | |  __/ | |  __/
+		\__,_| .__/ \__,_|\__,_|\__\___| |_| |_|\___|_|  \___|
+		| |                                              
+		|_|   
+		*/ 
 
-	//get vector to closest mine
-	SVector2D vClosestMine = GetClosestMine(objects);
-	//normalise it
-	Vec2DNormalize(vClosestMine);
-	
-	//TODO: calculate the steering forces here, it is set to 0 for now...
-	double RotForce = 0;
-	
-	//clamp rotation
-	Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
+		//get vector to closest mine
+		SVector2D vClosestMine = GetClosestMine(objects);
+		//normalise it
+		Vec2DNormalize(vClosestMine);
 
-	m_dRotation += RotForce;
+		//TODO: calculate the steering forces here, it is set to 0 for now...
+		double RotForce = 0;
 
-	//TODO: calculate the speed of the sweeper here (it is set to 0.5 by default)
-	m_dSpeed = 0.5;	
+		//clamp rotation
+		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 
-	//update Look At 
-	m_vLookAt.x = -sin(m_dRotation);
-	m_vLookAt.y = cos(m_dRotation);
+		m_dRotation += RotForce;
 
-	//update position
-	m_vPosition += (m_vLookAt * m_dSpeed);
+		//TODO: calculate the speed of the sweeper here (it is set to 0.5 by default)
+		m_dSpeed = 0.5;	
 
-	
-	//wrap around window limits
-	if (m_vPosition.x > CParams::WindowWidth) m_vPosition.x = 0;
-	if (m_vPosition.x < 0) m_vPosition.x = CParams::WindowWidth;
-	if (m_vPosition.y > CParams::WindowHeight) m_vPosition.y = 0;
-	if (m_vPosition.y < 0) m_vPosition.y = CParams::WindowHeight;
+		//update Look At 
+		m_vLookAt.x = -sin(m_dRotation);
+		m_vLookAt.y = cos(m_dRotation);
+
+		//update position
+		m_vPosition += (m_vLookAt * m_dSpeed);
+
+
+		//wrap around window limits
+		if (m_vPosition.x > CParams::WindowWidth) m_vPosition.x = 0;
+		if (m_vPosition.x < 0) m_vPosition.x = CParams::WindowWidth;
+		if (m_vPosition.y > CParams::WindowHeight) m_vPosition.y = 0;
+		if (m_vPosition.y < 0) m_vPosition.y = CParams::WindowHeight;
+	}
 
 	return true;
 }

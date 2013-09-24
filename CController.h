@@ -37,7 +37,8 @@ private:
 	//and the mines
 	vector<CCollisionObject>	   m_vecObjects;
 	
-	int					         m_NumSweepers; 
+	int					         m_NumSweepers;
+	int							m_NumActiveSweepers;
 
 	int					         m_NumMines;
 	int					         m_NumSuperMines;
@@ -55,6 +56,9 @@ private:
 
 	//stores the most MinesGathered per iteration
 	vector<double>		   m_vecMostMinesGathered;
+
+	//stores the number of sweepers remaning and the end of each iteration
+	vector<int>		   m_vecSweepersRemaining;
 
 
 
