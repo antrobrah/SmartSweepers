@@ -92,10 +92,12 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 
 		//get vector to closest mine
 		SVector2D vClosestMine = GetClosestMine(objects);
-		//normalise it
-		Vec2DNormalize(vClosestMine);
 
-		//TODO: calculate the steering forces here, it is set to 0 for now...
+		//find distance to closest object
+		double distance = Vec2DLength(vClosestMine);
+		//normalise vectors to find angle
+		Vec2DNormalize(vClosestMine);
+		
 		double RotForce = 0;
 
 		//clamp rotation
@@ -104,7 +106,7 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		m_dRotation += RotForce;
 
 		//TODO: calculate the speed of the sweeper here (it is set to 0.5 by default)
-		m_dSpeed = 0.5;	
+		m_dSpeed = 0.9;	
 
 		//update Look At 
 		m_vLookAt.x = -sin(m_dRotation);
@@ -125,7 +127,7 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 }
 
 
-//----------------------GetClosestObject()---------------------------------
+//----------------------GetClosestMine()---------------------------------
 //
 //	returns the vector from the sweeper to the closest mine
 //
@@ -147,12 +149,12 @@ SVector2D CMinesweeper::GetClosestMine(vector<CCollisionObject> &objects)
 			
 			vClosestObject	= m_vPosition - objects[i].getPosition();
 
-      m_iClosestMine = i;
+			m_iClosestMine = i;
 		}
 	}
-
 	return vClosestObject;
 }
+
 //----------------------------- CheckForMine -----------------------------
 //
 //  this function checks for collision with its closest mine (calculated

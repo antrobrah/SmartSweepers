@@ -39,7 +39,7 @@ const SPoint mine[NumMineVerts] = {SPoint(-1, -1),
 //
 //-----------------------------------------------------------------------
 CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
-										 m_NumActiveSweepers(CParams::iNumSweepers),
+										 m_NumInactiveSweepers(0),
 										                     m_bFastRender(false),
 										                     m_iTicks(0),
 										                     m_NumMines(CParams::iNumMines),
@@ -56,9 +56,9 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
 		m_vecSweepers.push_back(CMinesweeper());
 	}
 	
-	m_vecAvMinesGathered.push_back(0);
+	/*m_vecAvMinesGathered.push_back(0);
 	m_vecMostMinesGathered.push_back(0);
-	m_vecSweepersRemaining.push_back(0);
+	m_vecSweepersRemaining.push_back(0);*/
 
 	//TODO: initialse the learning algorithm here
 	// _       _ _   _       _ _           _                   
@@ -189,7 +189,7 @@ bool CController::Update()
 					m_vecSweepers[i].setActive(false);
 
 					// decrease number of sweepers
-					--m_NumActiveSweepers;
+					++m_NumInactiveSweepers;
 
 					// hide supermine for rest of iteration
 					m_vecObjects[GrabHit].setActive(false);
@@ -220,7 +220,10 @@ bool CController::Update()
 		// add data for this iteration to stats vectors
 		m_vecAvMinesGathered.push_back(average);
 		m_vecMostMinesGathered.push_back(max_mines);
-		m_vecSweepersRemaining.push_back(m_NumActiveSweepers);
+		m_vecDeadSweepers.push_back(m_NumInactiveSweepers);
+
+		/*string op = itos(m_iIterations)+": "+ftos(average)+" "+ftos(max_mines)+" "+itos(m_NumInactiveSweepers)+"\n";
+		OutputDebugString(op.c_str());*/
 
 		//increment the iteration counter
 		++m_iIterations;
@@ -235,7 +238,7 @@ bool CController::Update()
 		}
 
 		//reset number of active sweepers
-		m_NumActiveSweepers = m_NumSweepers;
+		m_NumInactiveSweepers = 0;
 
 		// reset all mines (and supermines) in random locations (and sets activity to true)
 		for (int i=0; i< m_vecObjects.size(); ++i)
@@ -373,12 +376,12 @@ void CController::PlotStats(HDC surface)
      s = "Average MinesGathered: " + ftos(m_vecAvMinesGathered.back());
 	TextOut(surface, 5, 40, s.c_str(), s.size());
 
-	s = "Number of sweepers remaining: " + ftos(m_vecSweepersRemaining.back());
+	s = "Number of dead sweepers: " + ftos(m_vecDeadSweepers.back());
 	TextOut(surface, 5, 60, s.c_str(), s.size());
     
     //render the graph
     float HSlice = (float)cxClient/(m_iIterations+1);
-	float VSlice = (float)cyClient/((1)*2);
+	float VSlice = (float)cyClient/(10);
 
     //plot the graph for the best MinesGathered
     float x = 0;
@@ -415,9 +418,9 @@ void CController::PlotStats(HDC surface)
 
     MoveToEx(surface, 0, cyClient, NULL);
     
-    for (int i=0; i<m_vecSweepersRemaining.size(); ++i)
+    for (int i=0; i<m_vecDeadSweepers.size(); ++i)
     {
-       LineTo(surface, (int)x, (int)(cyClient - VSlice*m_vecSweepersRemaining[i]));
+       LineTo(surface, (int)x, (int)(cyClient - VSlice*m_vecDeadSweepers[i]));
 
        x += HSlice;
     }
