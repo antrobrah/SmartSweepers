@@ -85,6 +85,10 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
                                    RandFloat() * cyClient)));
 	}
 
+	// for each s,a
+	// initialize table entry Q(s,a) = 0
+	// observe current state s for each minesweeper
+
 	//create a pen for the graph drawing
 	m_BluePen  = CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
 	m_RedPen   = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));

@@ -100,6 +100,15 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		
 		double RotForce = 0;
 
+		// select an action a and execute it
+		// receive immediate reward r
+		//     (reward e.g.: +100 if closer to mine, -50 if closer to supermine)
+		// observe the new state s'
+		// update Q(s,a):
+		//	   Q(s,a) <- r + y * max Q(s', a') (max over all actions taken over new state)
+		//     ( y = discount factor, 0 <= y < 1)
+		// s <- s'
+
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 

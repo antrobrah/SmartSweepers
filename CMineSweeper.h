@@ -48,6 +48,8 @@ private:
 	//(inactive only when collide with supermine)
 	bool			m_active;
 
+	//vector<> state;
+
 
 public:
 

@@ -87,6 +87,8 @@ private:
   //over the course of a run
   void   PlotStats(HDC surface);
 
+  double* Q; // function for learning the optimal reinforcement learning policy
+
 public:
 
 	CController(HWND hwndMain);
