@@ -106,21 +106,11 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		//normalise vectors to find angle
 		Vec2DNormalize(vClosestMine);
 		
-		double RotForce = 0;
-
-		// Q-learning alg
-		//NOTE: state only affected by live mines - must check
+		// find angle between closest mine and sweeper
+		double angle = Vec2DDot(m_vLookAt, vClosestMine);
+		
 		// select an action a and execute it
-
-		// receive immediate reward r
-		//     (reward e.g.: +100 if closer to mine, -50 if closer to supermine)
-		// observe the new state s'
-		// update Q(s,a):
-		//	   Q(s,a) <- r + y * max Q(s', a') (max over all actions taken over new state)
-		//     ( y = discount factor, 0 <= y < 1)
-		// s <- s'
-
-
+		double RotForce = angle * controller->actions[action_index] * CParams::dPi / 180;
 
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
@@ -137,13 +127,87 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		//update position
 		m_vPosition += (m_vLookAt * m_dSpeed);
 
+		// receive immediate reward r
+		// get updated vector to same mine, mine index given by m_iClosestMine
+		SVector2D vUpdatedClosestMine;
+		vUpdatedClosestMine = m_vPosition - objects[m_iClosestMine].getPosition();
+		//find new distance to closest mine
+		double new_distance = Vec2DLength(vUpdatedClosestMine);
+
+		int reward = 0;
+		// reward for ordinary mine
+		if (controller->states[state_index].mineType && new_distance < distance)
+		{
+			reward = 1;
+		}
+		// reward for supermine
+		else if (!controller->states[state_index].mineType && new_distance > distance)
+		{
+			reward = -1;
+		}
+
+		// observe the new state s'
+		State new_state;
+		
+		vClosestMine = GetClosestMine(objects);
+		Vec2DNormalize(vClosestMine);
+		new_state.angle = Vec2DDot(m_vLookAt, vClosestMine);
+
+		if (objects[m_iClosestMine].getType() == CCollisionObject::Mine)
+		{
+			new_state.mineType = true;
+		}
+		else
+		{
+			new_state.mineType = false;
+		}
+
+		// find state index relating to new state
+		int new_state_index = 0;
+
+		if (new_state.mineType)
+		{
+			new_state_index = new_state.angle + CParams::iNumStates / 4;
+		}
+		else
+		{
+			new_state_index = ( new_state.angle + CParams::iNumStates / 4 ) * 2;
+		}
+
+		if (new_state_index < 0)
+		{
+			new_state_index = 0;
+		}
+
+		int new_action_index = 0;
+		double largest = 0;
+
+		// update Q(s,a):
+		for (int i = 0; i < CParams::iNumActions; ++i)
+		{
+			double temp = controller->getQ(new_state_index, i);
+			if (temp > largest)
+			{
+				largest = temp;
+				new_action_index = i;
+			}
+		}
+
+		// Q(s,a) <- r + y * max Q(s', a') (max over all actions taken over new state)
+		// ( 0.9 = y = discount factor, 0 <= y < 1)
+		controller->setQ(state_index, action_index, reward + 0.9 * largest);
+
+		// s <- s'
+		state = new_state;
+		state_index = new_state_index;
+		action_index = new_action_index;
+
 		//wrap around window limits
 		if (m_vPosition.x > CParams::WindowWidth) m_vPosition.x = 0;
 		if (m_vPosition.x < 0) m_vPosition.x = CParams::WindowWidth;
 		if (m_vPosition.y > CParams::WindowHeight) m_vPosition.y = 0;
 		if (m_vPosition.y < 0) m_vPosition.y = CParams::WindowHeight;
 
-		// continue learning alg
 	}
 
 	return true;

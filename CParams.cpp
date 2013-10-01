@@ -20,8 +20,8 @@ int CParams::iNumTicks              = 0;
 double CParams::dMineScale          = 0;
 int CParams::iNumElite              = 0;
 int CParams::iNumCopiesElite        = 0;
-int CParams::iNumStates             = 0;
-int CParams::iNumActions            = 0;
+int CParams::iNumStates             = 240;
+int CParams::iNumActions            = 2;
 
 //this function loads in the parameters from a given file name. Returns
 //false if there is a problem opening the file.
