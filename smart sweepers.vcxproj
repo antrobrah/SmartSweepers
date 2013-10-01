@@ -141,6 +141,7 @@
     <ClInclude Include="CCollisionObject.h" />
     <ClInclude Include="CParams.h" />
     <ClInclude Include="CTimer.h" />
+    <ClInclude Include="State.h" />
     <ClInclude Include="SVector2D.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>

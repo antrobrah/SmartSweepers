@@ -6,6 +6,8 @@
 //-----------------------------------------------------------------------
 CMinesweeper::CMinesweeper(CController* _controller):
 						     controller(_controller),
+							 state_index(0),
+							 action_index(0),
                              m_dRotation(RandFloat()*CParams::dTwoPi),
                              m_dMinesGathered(0),
 							 m_dScale(CParams::iSweeperScale),
@@ -15,7 +17,11 @@ CMinesweeper::CMinesweeper(CController* _controller):
 	//create a random start position
 	m_vPosition = SVector2D((RandFloat() * CParams::WindowWidth), 
 					                (RandFloat() * CParams::WindowHeight));
-  
+
+	State s;
+	s.angle = 0;
+	s.mineType = true;
+	state = s;
 }
 
 //-------------------------------------------Reset()--------------------
@@ -102,7 +108,10 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		
 		double RotForce = 0;
 
+		// Q-learning alg
+		//NOTE: state only affected by live mines - must check
 		// select an action a and execute it
+
 		// receive immediate reward r
 		//     (reward e.g.: +100 if closer to mine, -50 if closer to supermine)
 		// observe the new state s'
@@ -111,7 +120,7 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		//     ( y = discount factor, 0 <= y < 1)
 		// s <- s'
 
-		//NOTE: state only affected by live mines - must check
+
 
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
@@ -128,12 +137,13 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		//update position
 		m_vPosition += (m_vLookAt * m_dSpeed);
 
-
 		//wrap around window limits
 		if (m_vPosition.x > CParams::WindowWidth) m_vPosition.x = 0;
 		if (m_vPosition.x < 0) m_vPosition.x = CParams::WindowWidth;
 		if (m_vPosition.y > CParams::WindowHeight) m_vPosition.y = 0;
 		if (m_vPosition.y < 0) m_vPosition.y = CParams::WindowHeight;
+
+		// continue learning alg
 	}
 
 	return true;
@@ -154,15 +164,18 @@ SVector2D CMinesweeper::GetClosestMine(vector<CCollisionObject> &objects)
 	//cycle through mines to find closest
 	for (int i=0; i<objects.size(); i++)
 	{
-		double len_to_object = Vec2DLength(objects[i].getPosition() - m_vPosition);
-
-		if (len_to_object < closest_so_far)
+		if (objects[i].getActive())
 		{
-			closest_so_far	= len_to_object;
-			
-			vClosestObject	= m_vPosition - objects[i].getPosition();
+			double len_to_object = Vec2DLength(objects[i].getPosition() - m_vPosition);
 
-			m_iClosestMine = i;
+			if (len_to_object < closest_so_far)
+			{
+				closest_so_far	= len_to_object;
+				
+				vClosestObject	= m_vPosition - objects[i].getPosition();
+
+				m_iClosestMine = i;
+			}
 		}
 	}
 	return vClosestObject;

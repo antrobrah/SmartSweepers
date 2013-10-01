@@ -17,6 +17,7 @@
 #include "SVector2D.h"
 #include "CParams.h"
 #include "CCollisionObject.h"
+#include "State.h"
 using namespace std;
 
 class CController;
@@ -52,8 +53,9 @@ private:
 	// back reference to controller to access Q function
 	CController* controller;
 
-	//vector<> state;
-
+	State state;
+	int state_index;
+	int action_index;
 
 public:
 

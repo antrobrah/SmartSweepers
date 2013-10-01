@@ -21,14 +21,9 @@
 #include "C2DMatrix.h"
 #include "SVector2D.h"
 #include "CParams.h"
+#include "State.h"
 
 using namespace std;
-
-struct State
-{
-	int angle;
-	bool mineType;
-};
 
 class CController
 {
