@@ -24,6 +24,12 @@
 
 using namespace std;
 
+struct State
+{
+	int angle;
+	bool mineType;
+};
+
 class CController
 {
 
@@ -88,7 +94,8 @@ private:
   double* Q; // function for learning the optimal reinforcement learning policy
   int num_states;
   int num_actions; // used for indexing
-
+  vector<State> states;
+  vector<double> actions; // multiply angle by this value (1 or -1)
 
 public:
 

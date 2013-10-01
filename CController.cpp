@@ -86,7 +86,7 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
                                    RandFloat() * cyClient)));
 	}
 
-
+	// create policy
 	initializeQ(CParams::iNumStates, CParams::iNumActions);
 
 	// for each s,a
@@ -98,6 +98,30 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
 			setQ(s, a, 0);
 		}
 	}
+
+	// initialize possible states (angle to closest mine and type (mine TRUE or supermine FALSE))
+	// divide by 4 to create field of view (i.e. 240 / 4 = 60 indicates 60 degree vision on either side from normal)
+	// for ordinary mines
+	for (int i = CParams::iNumStates / (-4); i < CParams::iNumStates / 4; ++i)
+	{
+		State s;
+		s.angle = i;
+		s.mineType = true;
+		states.push_back(s);
+	}
+
+	// for supermines
+	for (int i = CParams::iNumStates / (-4); i < CParams::iNumStates / 4; ++i)
+	{
+		State s;
+		s.angle = i;
+		s.mineType = false;
+		states.push_back(s);
+	}
+
+	// initialize possible actions
+	actions.push_back(1);
+	actions.push_back(-1);
 
 	// observe current state s for each minesweeper
 	// TODO:
