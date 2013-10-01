@@ -24,8 +24,6 @@
 
 using namespace std;
 
-
-
 class CController
 {
 
@@ -88,6 +86,9 @@ private:
   void   PlotStats(HDC surface);
 
   double* Q; // function for learning the optimal reinforcement learning policy
+  int num_states;
+  int num_actions; // used for indexing
+
 
 public:
 
@@ -108,6 +109,38 @@ public:
 	void		FastRender(bool arg){m_bFastRender = arg;}
 	void		FastRenderToggle()  {m_bFastRender = !m_bFastRender;}
 
+
+	// Q-function methods
+	void initializeQ(int _num_states, int _num_actions) {
+		num_states = _num_states;
+		num_actions = _num_actions;
+
+		Q = new double [num_states * num_actions];
+	}
+
+	double getQ(int state_index, int action_index) {
+		// safety check - to stop program from crashing
+		int reward_index = state_index * num_actions + action_index;
+
+		if (reward_index < num_states * num_actions)
+		{
+			return Q[state_index*num_actions + action_index];
+		}
+		else
+		{
+			return -1;
+		}
+	}
+
+	void setQ(int state_index, int action_index, double value) {
+		// safety check - to stop program from crashing
+		int reward_index = state_index * num_actions + action_index;
+
+		if (reward_index < num_states * num_actions)
+		{
+			Q[state_index*num_actions + action_index] = value;
+		}
+	}
 };
 
 

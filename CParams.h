@@ -61,6 +61,10 @@ public:
   static int    iNumElite;
   static int    iNumCopiesElite;
 
+  // used for reinforcement learning
+  static int iNumStates;
+  static int iNumActions;
+
   //ctor
   CParams()
   {

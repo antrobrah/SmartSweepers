@@ -19,6 +19,7 @@
 #include "CCollisionObject.h"
 using namespace std;
 
+class CController;
 
 class CMinesweeper
 {
@@ -48,13 +49,16 @@ private:
 	//(inactive only when collide with supermine)
 	bool			m_active;
 
+	// back reference to controller to access Q function
+	CController* controller;
+
 	//vector<> state;
 
 
 public:
 
 
-	CMinesweeper();
+	CMinesweeper(CController * _controller);
 
 	//updates the information from the sweepers enviroment
 	bool			Update(vector<CCollisionObject> &objects);

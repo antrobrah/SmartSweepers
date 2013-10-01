@@ -1,9 +1,11 @@
 #include "CMinesweeper.h"
+#include "CController.h"
 
 //-----------------------------------constructor-------------------------
 //
 //-----------------------------------------------------------------------
-CMinesweeper::CMinesweeper():
+CMinesweeper::CMinesweeper(CController* _controller):
+						     controller(_controller),
                              m_dRotation(RandFloat()*CParams::dTwoPi),
                              m_dMinesGathered(0),
 							 m_dScale(CParams::iSweeperScale),
@@ -108,6 +110,8 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		//	   Q(s,a) <- r + y * max Q(s', a') (max over all actions taken over new state)
 		//     ( y = discount factor, 0 <= y < 1)
 		// s <- s'
+
+		//NOTE: state only affected by live mines - must check
 
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);

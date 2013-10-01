@@ -53,12 +53,13 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
 	//let's create the mine sweepers
 	for (int i=0; i<m_NumSweepers; ++i)
 	{
-		m_vecSweepers.push_back(CMinesweeper());
+		m_vecSweepers.push_back(CMinesweeper(this));
 	}
 	
-	/*m_vecAvMinesGathered.push_back(0);
+	m_vecAvMinesGathered.push_back(0);
 	m_vecMostMinesGathered.push_back(0);
-	m_vecSweepersRemaining.push_back(0);*/
+	m_vecDeadSweepers.push_back(0);
+	//m_vecSweepersRemaining.push_back(0);
 
 	//TODO: initialse the learning algorithm here
 	// _       _ _   _       _ _           _                   
@@ -85,9 +86,21 @@ CController::CController(HWND hwndMain): m_NumSweepers(CParams::iNumSweepers),
                                    RandFloat() * cyClient)));
 	}
 
+
+	initializeQ(CParams::iNumStates, CParams::iNumActions);
+
 	// for each s,a
-	// initialize table entry Q(s,a) = 0
+	for (int s = 0; s < CParams::iNumStates; ++s)
+	{
+		for (int a = 0; a < CParams::iNumActions; ++a)
+		{
+			// initialize table entry to 0
+			setQ(s, a, 0);
+		}
+	}
+
 	// observe current state s for each minesweeper
+	// TODO:
 
 	//create a pen for the graph drawing
 	m_BluePen  = CreatePen(PS_SOLID, 1, RGB(0, 0, 255));
@@ -119,6 +132,7 @@ CController::~CController()
 	DeleteObject(m_RedPen);
 	DeleteObject(m_GreenPen);
 	DeleteObject(m_OldPen);
+	delete []Q;
 }
 
 
