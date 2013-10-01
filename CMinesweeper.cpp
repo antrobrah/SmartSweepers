@@ -138,12 +138,12 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		// reward for ordinary mine
 		if (controller->states[state_index].mineType && new_distance < distance)
 		{
-			reward = 1;
+			reward = 10;
 		}
 		// reward for supermine
 		else if (!controller->states[state_index].mineType && new_distance > distance)
 		{
-			reward = -1;
+			reward = -10;
 		}
 
 		// observe the new state s'
