@@ -107,11 +107,15 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 		Vec2DNormalize(vClosestMine);
 		
 		// find angle between closest mine and sweeper
-		double angle = Vec2DDot(m_vLookAt, vClosestMine);
+		double angle = acos(Vec2DDot(m_vLookAt, vClosestMine));
 		
 		// select an action a and execute it
-		double RotForce = angle * controller->actions[action_index] * CParams::dPi / 180;
+		int sign = Vec2DSign(m_vLookAt, vClosestMine);
 
+		double RotForce = sign * controller->actions[action_index] * 10;
+
+		if (objects[m_iClosestMine].getType() == CCollisionObject::SuperMine)
+			RotForce *= -1;
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 
@@ -141,17 +145,18 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 			reward = 10;
 		}
 		// reward for supermine
-		else if (!controller->states[state_index].mineType && new_distance > distance)
+		if ((!controller->states[state_index].mineType) && new_distance < distance)
 		{
-			reward = -10;
+			reward = -10; // getting too close
 		}
 
 		// observe the new state s'
 		State new_state;
 		
 		vClosestMine = GetClosestMine(objects);
+		Vec2DNormalize(m_vLookAt);
 		Vec2DNormalize(vClosestMine);
-		new_state.angle = Vec2DDot(m_vLookAt, vClosestMine);
+		new_state.angle = acos(Vec2DDot(m_vLookAt, vClosestMine));
 
 		if (objects[m_iClosestMine].getType() == CCollisionObject::Mine)
 		{
@@ -216,7 +221,8 @@ bool CMinesweeper::Update(vector<CCollisionObject> &objects)
 
 //----------------------GetClosestMine()---------------------------------
 //
-//	returns the vector from the sweeper to the closest mine
+//	returns the vector from the sweeper to the closest mine, within the
+//  sweeper's field of view
 //
 //-----------------------------------------------------------------------
 SVector2D CMinesweeper::GetClosestMine(vector<CCollisionObject> &objects)
@@ -232,13 +238,24 @@ SVector2D CMinesweeper::GetClosestMine(vector<CCollisionObject> &objects)
 		{
 			double len_to_object = Vec2DLength(objects[i].getPosition() - m_vPosition);
 
-			if (len_to_object < closest_so_far)
-			{
-				closest_so_far	= len_to_object;
-				
-				vClosestObject	= m_vPosition - objects[i].getPosition();
+			// find angle between forward direction and mine (in radians)
+			SVector2D current_mine_vec = m_vPosition - objects[i].getPosition();
+			Vec2DNormalize(m_vLookAt);
+			Vec2DNormalize(current_mine_vec);
+			double angle = acos(Vec2DDot(m_vLookAt, current_mine_vec));
 
-				m_iClosestMine = i;
+			if(angle > CParams::dHalfPi) // out of field of view (behind sweeper)
+				continue;
+			else
+			{
+				if (len_to_object < closest_so_far)
+				{
+					closest_so_far	= len_to_object;
+				
+					vClosestObject	= m_vPosition - objects[i].getPosition();
+
+					m_iClosestMine = i;
+				}
 			}
 		}
 	}
